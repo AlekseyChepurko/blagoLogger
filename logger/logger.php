@@ -11,5 +11,8 @@ namespace blago;
 
 class logger
 {
-
+    public static function saveData(){
+        return true;
+//        return  $_SERVER['REMOTE_HOST'];
+    }
 }
