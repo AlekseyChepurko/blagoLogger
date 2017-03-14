@@ -13,7 +13,7 @@ let Logger = (function (){
         let inputs = getAllInputs();
         $.ajax({
             type: "POST",
-            // dataType: "json",
+            dataType: "json",
             data: {
                 inputs: inputs.serialize(),
             },
