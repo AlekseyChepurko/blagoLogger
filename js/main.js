@@ -19,13 +19,12 @@ let Logger = (function (){
             },
             url: "../logger/loggerHandler.php",
             success: function(data){
-                console.log(data);
+                console.log("all right");
             },
             error: function(error){
+                console.log("error");
                 console.log(error);
             }
-
-
         });
     }
 
@@ -37,11 +36,5 @@ let Logger = (function (){
 }());
 
 $("input").change(function() {
-
     Logger.saveInputValues();
-    // console.log(window.location.pathname);
-    // Logger.getAllInputs().each(function(){
-    //     if(this.value)
-    //         console.log(this.value);
-    // });
 });

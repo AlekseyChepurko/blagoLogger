@@ -6,6 +6,6 @@
  * Time: 15:56
  */
 
+session_start();
 require_once 'logger.php';
-
-( \blago\logger::saveData() );
+echo( \blago\logger::saveData() );
