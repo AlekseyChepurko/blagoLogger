@@ -7,4 +7,4 @@
  */
 
 require_once 'logger.php';
-\blago\logger::sendData();
+var_dump( \blago\logger::sendData() );
