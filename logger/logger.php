@@ -17,26 +17,28 @@ class logger
     {
 
     }
+//constants
+    // Set DB parametrs
+    const servername = DBSettings::servername;
+    const dbname = DBSettings::dbname;
+    const username = DBSettings::username;
+    const password = DBSettings::password;
+
+    const logFileName = "../logs/usersDataLog.csv";
 
     public static function saveData(){
         session_start();
         $sessionId = session_id();
 
-        // Set DB parametrs
-        $servername = DBSettings::servername;
-        $dbname = DBSettings::dbname;
-        $username = DBSettings::username;
-        $password = DBSettings::password;
 
         // Connect to DB
-        $db = new Mysqli($servername, $username, $password, $dbname);
+        $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
 
         // Check connection
         if ($db->connect_error) {
-            throw new \Exception("");
+//            throw new \Exception("could noy cpnnect to DB");
             die("Connection failed: " . $db->connect_error);
         }
-
         //check the tatble exists
         // if does not -> create
         if ($result = $db->query("SHOW TABLES LIKE 'logs'")) {
@@ -115,4 +117,47 @@ class logger
         return http_response_code(200);
 
     }
+
+
+    public static function writeData(){
+
+        // Connect to DB
+        $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
+
+        // Check connection
+        if ($db->connect_error) {
+//            throw new \Exception("could noy cpnnect to DB");
+            die("Connection failed: " . $db->connect_error);
+        }
+        //check the tatble exists
+        // if does not -> create
+        if ($result = $db->query("SHOW TABLES LIKE 'logs'")) {
+            if($result->num_rows !== 1) {
+                header("HTTP/1.0 Not Found");
+            }
+        }
+        else{
+            return http_response_code(500);
+        }
+
+        if (!$usersData = $db->query("SELECT * FROM logs")->fetch_all())
+            return http_response_code(500);
+
+
+        if (!is_dir("../logs"))
+            mkdir("../logs");
+
+        $logFile = fopen(logger::logFileName, "w");
+
+        foreach ($usersData as $line){
+            fputcsv($logFile, $line, ";");
+        }
+
+        fclose($logFile);
+    }
+
+
+    public static function sendData(){
+}
+
 }
