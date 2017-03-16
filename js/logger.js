@@ -2,15 +2,15 @@
  * Created by Алексей on 14.03.2017.
  */
 
-let Logger = (function (){
+var Logger = (function (){
 
-    let getAllInputs = function()
+    var getAllInputs = function()
     {
         return $("input");
     }
 
-    let saveInputValues = function(){
-        let inputs = getAllInputs();
+    var saveInputValues = function(){
+        var inputs = getAllInputs();
         $.ajax({
             type: "POST",
             data: {
@@ -19,6 +19,7 @@ let Logger = (function (){
             url: "../logger/loggerHandler.php",
             success: function(data){
                 console.log("all clear");
+                console.log(data);
             },
             error: function(error){
                 console.log("error");
