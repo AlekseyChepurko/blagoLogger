@@ -10,7 +10,7 @@ namespace blago;
 use Mysqli;
 
 require_once 'DBSettings.php';
-
+require_once 'MailerSettings.php';
 class logger
 {
     function __construct()
@@ -18,14 +18,22 @@ class logger
 
     }
 //constants
-    // Set DB parametrs
+    // DB parametrs
     const servername = DBSettings::servername;
     const dbname = DBSettings::dbname;
     const username = DBSettings::username;
     const password = DBSettings::password;
 
-    const logFileName = "../logs/usersDataLog.csv";
+    // Mailer parametrs
+    const mailTo = MailerSettings::mailTo;
+    const subject = MailerSettings::subject;
+    const message = MailerSettings::message;
+    const mailFrom = MailerSettings::mailFrom;
 
+    const logFileName = "usersDataLog.csv";
+    const logFilePath = "../logs/".logger::logFileName;
+
+    // saves data to DB
     public static function saveData(){
         session_start();
         $sessionId = session_id();
@@ -118,7 +126,7 @@ class logger
 
     }
 
-
+    // writes all records from DB to file ../logs/usersDataLog.csv
     public static function writeData(){
 
         // Connect to DB
@@ -147,17 +155,77 @@ class logger
         if (!is_dir("../logs"))
             mkdir("../logs");
 
-        $logFile = fopen(logger::logFileName, "w");
+        $logFile = fopen(logger::logFilePath, "w");
 
         foreach ($usersData as $line){
             fputcsv($logFile, $line, ";");
         }
 
         fclose($logFile);
+
+        return http_response_code(200);
+
     }
 
+    // sends email with usersDataLog.csv according to the data in MailerSettings.php
+    public static function sendData()
+    {
+        logger::writeData();
+        $filename = logger::logFilePath;
 
-    public static function sendData(){
-}
+        $mailto = logger::mailTo;
+        $subject = logger::subject;
+        $message = logger::message;
+
+        $content = file_get_contents($filename);
+        $content = chunk_split(base64_encode($content));
+
+        // a random hash will be necessary to send mixed content
+        $separator = md5(time());
+
+        // carriage return type (RFC)
+        $eol = "\r\n";
+
+        // main header (multipart mandatory)
+        $headers = "From: name ". logger::mailFrom . $eol;
+        $headers .= "MIME-Version: 1.0" . $eol;
+        $headers .= "Content-Type: multipart/mixed; boundary=\"" . $separator . "\"" . $eol;
+        $headers .= "Content-Transfer-Encoding: 7bit" . $eol;
+        $headers .= "This is a MIME encoded message." . $eol;
+
+        // message
+        $body = "--" . $separator . $eol;
+        $body .= "Content-Type: text/plain; charset=\"iso-8859-1\"" . $eol;
+        $body .= "Content-Transfer-Encoding: 8bit" . $eol;
+        $body .= $message . $eol;
+
+        // attachment
+        $body .= "--" . $separator . $eol;
+        $body .= "Content-Type: application/octet-stream; name=\"" . $filename . "\"" . $eol;
+        $body .= "Content-Transfer-Encoding: base64" . $eol;
+        $body .= "Content-Disposition: attachment" . $eol;
+        $body .= $content . $eol;
+        $body .= "--" . $separator . "--";
+
+        //SEND Mail
+        if (!mail($mailto, $subject, $body, $headers)) {
+            echo "mail send ... ERROR!";
+            print_r( error_get_last() );
+            return http_response_code(500);
+        }
+
+        // Drop table logs
+
+        $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
+        // Check connection
+        if ($db->connect_error) {
+            die("Connection failed: " . $db->connect_error);
+        }
+
+        $db->query("DROP  TABLE IF EXISTS logs");
+
+        return http_response_code(200);
+    }
+
 
 }
