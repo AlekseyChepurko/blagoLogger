@@ -158,7 +158,7 @@ class logger
         $logFile = fopen(logger::logFilePath, "w");
 
         foreach ($usersData as $line){
-            fputcsv($logFile, $line, ";");
+            fputcsv($logFile, $line);
         }
 
         fclose($logFile);
@@ -171,13 +171,14 @@ class logger
     public static function sendData()
     {
         logger::writeData();
-        $filename = logger::logFilePath;
+        $filePath = logger::logFilePath;
+        $fileName = logger::logFileName;
 
         $mailto = logger::mailTo;
         $subject = logger::subject;
         $message = logger::message;
 
-        $content = file_get_contents($filename);
+        $content = file_get_contents($filePath);
         $content = chunk_split(base64_encode($content));
 
         // a random hash will be necessary to send mixed content
@@ -187,7 +188,7 @@ class logger
         $eol = "\r\n";
 
         // main header (multipart mandatory)
-        $headers = "From: name ". logger::mailFrom . $eol;
+        $headers = "From: ". logger::mailFrom . $eol;
         $headers .= "MIME-Version: 1.0" . $eol;
         $headers .= "Content-Type: multipart/mixed; boundary=\"" . $separator . "\"" . $eol;
         $headers .= "Content-Transfer-Encoding: 7bit" . $eol;
@@ -201,7 +202,7 @@ class logger
 
         // attachment
         $body .= "--" . $separator . $eol;
-        $body .= "Content-Type: application/octet-stream; name=\"" . $filename . "\"" . $eol;
+        $body .= "Content-Type: application/octet-stream; name=\"" . $fileName . "\"" . $eol;
         $body .= "Content-Transfer-Encoding: base64" . $eol;
         $body .= "Content-Disposition: attachment" . $eol;
         $body .= $content . $eol;
@@ -222,7 +223,7 @@ class logger
             die("Connection failed: " . $db->connect_error);
         }
 
-        $db->query("DROP  TABLE IF EXISTS logs");
+        $db->query("DROP TABLE IF EXISTS logs");
 
         return http_response_code(200);
     }
