@@ -158,7 +158,7 @@ class logger
         $logFile = fopen(logger::logFilePath, "w");
 
         foreach ($usersData as $line){
-            fputcsv($logFile, $line);
+            fputcsv($logFile, $line, ";");
         }
 
         fclose($logFile);
