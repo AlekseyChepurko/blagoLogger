@@ -13,10 +13,13 @@ var Logger = (function (){
         var inputs = getAllInputs();
         $.ajax({
             type: "POST",
+            crossdomain: true,
+            dataType: jsonp,
+
             data: {
                 inputs: inputs.serialize(),
             },
-            url: "../logger/loggerHandler.php",
+            url: "http://achepurko.ru/logger/loggerHandler.php",
             success: function(data){
                 console.log("all clear");
                 console.log(data);
