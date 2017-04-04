@@ -11,9 +11,9 @@ namespace blago;
 
 class MailerSettings
 {
-    const mailTo = "aleksey.chepurko@gmail.com";
+    const mailTo = "Oleg.Bimaev@skblago.ru, intouch_bd@skblago.ru, aleksey.chepurko@gmail.com, SingleXXX@mail.ru, BimaevOleg@Gmail.com";
     const subject = "Данные пользователей";
     const message = "В прикрепленном файле находится информация о пользователях";
-    const mailFrom = "no-reply@blago.ru";
+    const mailFrom = "no-reply@skblago.ru";
 
 }
