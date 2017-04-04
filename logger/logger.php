@@ -158,6 +158,9 @@ class logger
         $logFile = fopen(logger::logFilePath, "w");
 
         foreach ($usersData as $line){
+            foreach($line as $p=>$lineItem){
+                $line[$p] = iconv("utf-8","windows-1251", $lineItem);
+            }
             fputcsv($logFile, $line, ";");
         }
 
