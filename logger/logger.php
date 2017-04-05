@@ -38,7 +38,6 @@ class logger
         session_start();
         $sessionId = session_id();
 
-
         // Connect to DB
         $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
 
@@ -49,9 +48,11 @@ class logger
         }
         //check the tatble exists
         // if does not -> create
-        if ($result = $db->query("SHOW TABLES LIKE 'logs'")) {
+        $pageTitle = $_POST[pageTitle];
+        $tableName = $pageTitle."_logs";
+        if ($result = $db->query("SHOW TABLES LIKE '".$tableName."'")) {
             if($result->num_rows !== 1) {
-                $createTableQuery = "CREATE TABLE logs (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, session_id VARCHAR(60))";
+                $createTableQuery = "CREATE TABLE ".$tableName." (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, session_id VARCHAR(60))";
                 if (!$db->query($createTableQuery) === true)
                     return http_response_code(424);
             }
@@ -71,10 +72,10 @@ class logger
 
             // check if column of input exists
             // if does not -> add
-            $result = $db->query("SHOW COLUMNS FROM `logs` LIKE '".$arrayIndex."'");
+            $result = $db->query("SHOW COLUMNS FROM `".$tableName."` LIKE '".$arrayIndex."'");
             $columnExists = (mysqli_num_rows($result))?TRUE:FALSE;
             if(!$columnExists) {
-                $db->query("ALTER TABLE logs ADD ".$arrayIndex." VARCHAR(60)");
+                $db->query("ALTER TABLE ".$tableName." ADD ".$arrayIndex." VARCHAR(60)");
             }
 
             $arrayValue = substr( $input, strpos($input,'=')+1, strlen($input) );
@@ -82,7 +83,7 @@ class logger
                 $inputs[$arrayIndex] = addslashes($arrayValue);
         }
 
-        $selectBySession = $db->query("SELECT session_id FROM logs WHERE session_id='".$sessionId."'");
+        $selectBySession = $db->query("SELECT session_id FROM ".$tableName." WHERE session_id='".$sessionId."'");
 
 
 
@@ -101,13 +102,13 @@ class logger
             $keys = rtrim($keys, ',');
         // end make
 
-            $insertQuery = "INSERT INTO logs (session_id,".$keys.") VALUES ('".$sessionId."',".$values.")";
+            $insertQuery = "INSERT INTO ".$tableName." (session_id,".$keys.") VALUES ('".$sessionId."',".$values.")";
 
             if (!$db->query($insertQuery))
                 return http_response_code(500);
         }
         else{
-            $updateQuery = "UPDATE logs SET ";
+            $updateQuery = "UPDATE ".$tableName." SET ";
 
             foreach ($inputs as $key => $value) {
                 $updateQuery = $updateQuery.$key."='".$value."',";
