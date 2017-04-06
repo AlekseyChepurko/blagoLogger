@@ -10,16 +10,19 @@ var Logger = (function (){
     }
 
     var saveInputValues = function(){
-        var inputs = getAllInputs();
+        var inputs = getAllInputs(),
+            pageURL = window.location.href,
+            pageTitle = $(document).find("title").text().replace(" ","_").toLowerCase();
+        console.log(pageTitle);
         $.ajax({
             type: "POST",
-            crossdomain: true,
-            dataType: jsonp,
 
             data: {
                 inputs: inputs.serialize(),
+                pageURL: pageURL,
+                pageTitle: pageTitle,
             },
-            url: "http://achepurko.ru/logger/loggerHandler.php",
+            url: "../logger/loggerHandler.php",
             success: function(data){
                 console.log("all clear");
                 console.log(data);
