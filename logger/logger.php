@@ -31,7 +31,7 @@ class logger
     const mailFrom = MailerSettings::mailFrom;
 
     const logFileName = "usersDataLog.csv";
-    const logFilePath = "../logs/".logger::logFileName;
+    const logFilesPath = "../logs/";
 
     // saves data to DB
     public static function saveData(){
@@ -149,23 +149,27 @@ class logger
             return http_response_code(500);
         }
 
-        if (!$usersData = $db->query("SELECT * FROM logs")->fetch_all())
-            return http_response_code(500);
+        $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
 
+        foreach ($tables as $tableName) {
 
-        if (!is_dir("../logs"))
-            mkdir("../logs");
+            if (!$usersData = $db->query("SELECT * FROM ".$tableName[0])->fetch_all())
+                return http_response_code(500);
 
-        $logFile = fopen(logger::logFilePath, "w");
+            if (!is_dir("../logs"))
+                mkdir("../logs");
 
-        foreach ($usersData as $line){
-            foreach($line as $p=>$lineItem){
-                $line[$p] = iconv("utf-8","windows-1251", $lineItem);
+            $logFile = fopen(logger::logFilesPath.$tableName[0].".csv", "w");
+
+            foreach ($usersData as $line) {
+                foreach ($line as $p => $lineItem) {
+                    $line[$p] = iconv("utf-8", "windows-1251", $lineItem);
+                }
+                fputcsv($logFile, $line, ";");
             }
-            fputcsv($logFile, $line, ";");
-        }
 
-        fclose($logFile);
+            fclose($logFile);
+        }
 
         return http_response_code(200);
 
@@ -175,7 +179,7 @@ class logger
     public static function sendData()
     {
         logger::writeData();
-        $filePath = logger::logFilePath;
+        $filePath = logger::logFilesPath;
         $fileName = logger::logFileName;
 
         $mailto = logger::mailTo;
