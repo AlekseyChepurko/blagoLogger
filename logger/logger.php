@@ -52,7 +52,7 @@ class logger
         $tableName = $pageTitle."_logs";
         if ($result = $db->query("SHOW TABLES LIKE '".$tableName."'")) {
             if($result->num_rows !== 1) {
-                $createTableQuery = "CREATE TABLE ".$tableName." (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, session_id VARCHAR(60))";
+                $createTableQuery = "CREATE TABLE ".$tableName." (id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, session_id VARCHAR(60), time TIMESTAMP)";
                 if (!$db->query($createTableQuery) === true)
                     return http_response_code(424);
             }
