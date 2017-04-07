@@ -151,26 +151,36 @@ class logger
 
         $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
 
+        if (!is_dir("../logs"))
+            mkdir("../logs");
+
+        $logFile = fopen(logger::logFilesPath.logger::logFileName, "w");
+
         foreach ($tables as $tableName) {
 
-            if (!$usersData = $db->query("SELECT * FROM ".$tableName[0])->fetch_all())
+            if (!$usersData = $db->query("SELECT * FROM ".$tableName[0]))
                 return http_response_code(500);
 
-            if (!is_dir("../logs"))
-                mkdir("../logs");
+            fputcsv($logFile, [""], ';');
+            fputcsv($logFile, $tableName, ';');
 
-            $logFile = fopen(logger::logFilesPath.$tableName[0].".csv", "w");
-
+            $columns = $usersData->fetch_fields();
+            $columnNames = [];
+            foreach ($columns as $column)
+            {
+                array_push($columnNames, $column->name);
+            }
+            fputcsv($logFile, $columnNames, ";");
+            $usersData->fetch_all();
             foreach ($usersData as $line) {
                 foreach ($line as $p => $lineItem) {
                     $line[$p] = iconv("utf-8", "windows-1251", $lineItem);
                 }
                 fputcsv($logFile, $line, ";");
             }
-
-            fclose($logFile);
         }
 
+        fclose($logFile);
         return http_response_code(200);
 
     }
@@ -186,7 +196,7 @@ class logger
         $subject = logger::subject;
         $message = logger::message;
 
-        $content = file_get_contents($filePath);
+        $content = file_get_contents($filePath.$fileName);
         $content = chunk_split(base64_encode($content));
 
         // a random hash will be necessary to send mixed content
@@ -231,7 +241,12 @@ class logger
             die("Connection failed: " . $db->connect_error);
         }
 
-        $db->query("DROP TABLE IF EXISTS logs");
+        $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
+
+        foreach ($tables as $tableName) {
+            $drop_query = "DROP TABLE IF EXISTS $tableName[0]";
+            $db->query($drop_query);
+        }
 
         return http_response_code(200);
     }
