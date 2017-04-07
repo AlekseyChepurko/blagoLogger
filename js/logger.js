@@ -11,15 +11,13 @@ var Logger = (function (){
 
     var saveInputValues = function(){
         var inputs = getAllInputs(),
-            pageURL = window.location.href,
             pageTitle = $(document).find("title").text().replace(" ","_").toLowerCase();
-        console.log(pageTitle);
+        pagetitle = pageTitle === "" ? "main" : pageTitle;
         $.ajax({
             type: "POST",
 
             data: {
                 inputs: inputs.serialize(),
-                pageURL: pageURL,
                 pageTitle: pageTitle,
             },
             url: "../logger/loggerHandler.php",
