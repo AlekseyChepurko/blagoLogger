@@ -11,8 +11,9 @@ var Logger = (function (){
 
     var saveInputValues = function(){
         var inputs = getAllInputs(),
-            pageTitle = $(document).find("title").text().replace(" ","_").toLowerCase();
+            pageTitle = $(document).find("title").text().replace(/ /g,"_").toLowerCase();
         pagetitle = pageTitle === "" ? "main" : pageTitle;
+        console.log(pageTitle);
         $.ajax({
             type: "POST",
 
