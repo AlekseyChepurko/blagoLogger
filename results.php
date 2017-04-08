@@ -9,6 +9,7 @@
 namespace blago;
 use Mysqli;
 require_once "./logger/DBSettings.php";
+require_once "./logger/logger.php";
 
 $sessionId = session_id();
 
@@ -27,28 +28,38 @@ if ($db->connect_error) {
     die("Connection failed: " . $db->connect_error);
 }
 
-$query = "SELECT * FROM logs";
+$tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
 
-$results = $db->query($query)->fetch_all();
+if (!$tables)
+    throw new \Exception("No tables to fetch results");
 
-if(!$results){
-    throw new \Exception("nothing is here");
-};
+foreach ($tables as $tableName) {
 
-?>
-<table>
-    <?
+    $query = "SELECT * FROM $tableName[0]";
+
+    $results = $db->query($query)->fetch_all();
+
+    if(!$results){
+        throw new \Exception("No results given");
+    };
+
+    ?>
+    <table>
+
+        <th>Table <?=$tableName[0]?></th>
+        <?
         foreach ($results as $tr){
             ?>
-                <tr>
-                    <?
-                    foreach ($tr as $td)
-                    {
-                        ?><td style="text-align: right; padding: 0 10px 0 20px; border: 1px solid black;"><?=$td?></td><?
-                    }
-                    ?>
-                </tr>
+            <tr>
+                <?
+                foreach ($tr as $td)
+                {
+                    ?><td style="text-align: right; padding: 0 10px 0 20px; border: 1px solid black;"><?=$td?></td><?
+                }
+                ?>
+            </tr>
             <?
         }
-    ?>
-</table>
+        ?>
+    </table>
+<?}?>
