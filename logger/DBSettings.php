@@ -11,8 +11,11 @@ namespace blago;
 
 class DBSettings
 {
-    const servername = "127.0.0.1";
+    const servername = "localhost";
+    // const username = "d_streltsov";
     const username = "root";
+    // const dbname = "blago";
     const dbname = "blagoLogger";
+    // const password = "E7abyxCB";
     const password = "";
 }
