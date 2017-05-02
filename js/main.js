@@ -2,7 +2,8 @@
  * Created by Алексей on 15.03.2017.
  */
 
-
-$("input").change(function() {
-    Logger.saveInputValues();
+document.addEventListener("DOMContentLoaded", function(){
+	$("input").change(function() {
+    	Logger.saveInputValues();
+	});	
 });
