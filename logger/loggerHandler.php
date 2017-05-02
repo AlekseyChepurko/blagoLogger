@@ -7,5 +7,5 @@
  */
 
 session_start();
-require_once 'logger.php';
+require_once './logger.php';
 echo( \blago\logger::saveData() );

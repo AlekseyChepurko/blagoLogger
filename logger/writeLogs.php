@@ -6,5 +6,5 @@
  * Time: 15:14
  */
 
-require_once 'logger.php';
+require_once './logger.php';
 var_dump( \blago\logger::writeData() );

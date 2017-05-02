@@ -6,5 +6,5 @@
  * Time: 15:52
  */
 
-require_once 'logger/logger.php';
+require_once '/logger/logger.php';
 var_dump( \blago\logger::sendData() );
