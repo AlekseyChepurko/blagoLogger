@@ -15,7 +15,6 @@ class logger
 {
     function __construct()
     {
-
     }
 //constants
     // DB parametrs
@@ -35,17 +34,18 @@ class logger
 
     // saves data to DB
     public static function saveData(){
+        var_dump("save data function start");
         session_start();
         $sessionId = session_id();
 
         // Connect to DB
         $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
-
         // Check connection
         if ($db->connect_error) {
 //            throw new \Exception("could noy cpnnect to DB");
             die("Connection failed: " . $db->connect_error);
         }
+
         //check the tatble exists
         // if does not -> create
         $pageTitle = $_POST[pageTitle];
@@ -61,7 +61,7 @@ class logger
             return http_response_code(500);
         }
 
-        if ( strlen($_POST[inputs])== 0)
+        if ( strlen($_POST[inputs]) == 0)
             throw new \Exception("inputs is empty");
 
         $explodedInputs = explode("&",urldecode($_POST[inputs]));
@@ -72,10 +72,17 @@ class logger
 
             // check if column of input exists
             // if does not -> add
+            $arrayIndex = str_replace("[", "_", $arrayIndex);
+            $arrayIndex = str_replace("]", "", $arrayIndex);
+            $arrayIndex = "_".$arrayIndex;
             $result = $db->query("SHOW COLUMNS FROM `".$tableName."` LIKE '".$arrayIndex."'");
             $columnExists = (mysqli_num_rows($result))?TRUE:FALSE;
             if(!$columnExists) {
-                $db->query("ALTER TABLE ".$tableName." ADD ".$arrayIndex." VARCHAR(60)");
+                try {
+                    $db->query("ALTER TABLE ".$tableName." ADD ".$arrayIndex." VARCHAR(60)");
+                } catch (Exception $e) {
+                    var_dump($e);
+                }
             }
 
             $arrayValue = substr( $input, strpos($input,'=')+1, strlen($input) );
@@ -84,8 +91,6 @@ class logger
         }
 
         $selectBySession = $db->query("SELECT session_id FROM ".$tableName." WHERE session_id='".$sessionId."'");
-
-
 
     // make queries for insert/update
         if( $selectBySession->num_rows === 0 ){
@@ -97,20 +102,34 @@ class logger
                 $values = $values."'".$value."',";
                 $keys = $keys.$key.",";
             }
-
             $values = rtrim($values, ',');
+            $keys = str_replace("[", "_", $keys);
+            $keys = str_replace("]", "", $keys);            
             $keys = rtrim($keys, ',');
         // end make
-
+            $result =$db->query("SHOW TABLES from ".logger::dbname);
+                    // var_dump($db->query("SHOW COLUMNS FROM `".$tableName."`"));
+            // var_dump('name '.$tableName);
+            $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
+            try {
+                var_dump("tables from  ");
+                var_dump($tables);
+            } catch (Exception $e) {
+                var_dump($e);
+            }
             $insertQuery = "INSERT INTO ".$tableName." (session_id,".$keys.") VALUES ('".$sessionId."',".$values.")";
-
-            if (!$db->query($insertQuery))
+            var_dump($insertQuery);
+            var_dump($db->query($insertQuery));
+            if (!$db->query($insertQuery)){
+                var_dump("here is 500 error");
                 return http_response_code(500);
+            }
         }
         else{
             $updateQuery = "UPDATE ".$tableName." SET ";
-
             foreach ($inputs as $key => $value) {
+                $key = str_replace("[", "_", $key);
+                $key = str_replace("]", "", $key);   
                 $updateQuery = $updateQuery.$key."='".$value."',";
             }
 
@@ -122,7 +141,7 @@ class logger
         }
     // end make
 
-
+        var_dump("save function ended");
         return http_response_code(200);
 
     }
@@ -151,8 +170,8 @@ class logger
 
         $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
 
-        if (!is_dir("../logs"))
-            mkdir("../logs");
+        if (!is_dir(logger::logFilesPath))
+            mkdir(logger::logFilesPath);
 
         $logFile = fopen(logger::logFilesPath.logger::logFileName, "w");
 
