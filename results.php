@@ -27,17 +27,30 @@ if ($db->connect_error) {
     throw new \Exception("");
     die("Connection failed: " . $db->connect_error);
 }
+//
+//var_dump("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
+//var_dump($db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'") );
+//var_dump($db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_array() );
+$tables = [];
+$res = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
+while($row = $res->fetch_array()) {
+        $tables[] = $row;
+    }
 
-$tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
+//$tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
 
 if (!$tables)
     throw new \Exception("No tables to fetch results");
 
 foreach ($tables as $tableName) {
-
     $query = "SELECT * FROM $tableName[0]";
 
-    $results = $db->query($query)->fetch_all();
+    $results = [];
+    $res = $db->query($query);
+
+    while($row = $res->fetch_assoc() ){
+        $results[] = $row;
+    }
 
     if(!$results){
         throw new \Exception("No results given");
