@@ -205,7 +205,8 @@ class logger
         foreach ($tables as $tableName) {
             if (!$usersData = $db->query("SELECT * FROM ".$tableName["TABLE_NAME"]))
                 return http_response_code(500);
-
+            if($usersData->num_rows === 0)
+                continue;
             fputcsv($logFile, [""], ';');
             fputcsv($logFile, $tableName, ';');
 
@@ -244,11 +245,11 @@ class logger
     public static function sendData()
     {
         logger::writeData();
-        logger::saveFile();
         $filePath = logger::logFilesPath;
         $fileName = logger::logFileName;
-        if ($_GET["sendEmptyFile"] !== "true" && filesize($filePath.$fileName) < 1024)
+        if ($_GET["sendEmptyFile"] !== "true" && filesize($filePath.$fileName) < 10)
             return http_response_code(200);
+        logger::saveFile();
         echo 'START<br>'.$filePath.$fileName.'<br>';
         echo __FILE__.'<br>';
         $mailto = logger::mailTo;
