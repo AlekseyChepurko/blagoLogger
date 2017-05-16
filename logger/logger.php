@@ -11,6 +11,8 @@ use Mysqli;
 
 require_once 'DBSettings.php';
 require_once 'MailerSettings.php';
+require_once 'class.phpmailer.php';
+
 class logger
 {
     function __construct()
@@ -91,10 +93,10 @@ class logger
 
         $selectBySession = $db->query("SELECT session_id FROM ".$tableName." WHERE session_id='".$sessionId."'");
 
-    // make queries for insert/update
+        // make queries for insert/update
         if( $selectBySession->num_rows === 0 ){
 
-        // make keys and according values for sql query for insert/update
+            // make keys and according values for sql query for insert/update
             $values = "";
             $keys = "";
             foreach ($inputs as $key => $value){
@@ -103,9 +105,9 @@ class logger
             }
             $values = rtrim($values, ',');
             $keys = str_replace("[", "_", $keys);
-            $keys = str_replace("]", "", $keys);            
+            $keys = str_replace("]", "", $keys);
             $keys = rtrim($keys, ',');
-        // end make
+            // end make
             $result =$db->query("SHOW TABLES from ".logger::dbname);
 
             $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
@@ -128,7 +130,7 @@ class logger
             $updateQuery = "UPDATE ".$tableName." SET ";
             foreach ($inputs as $key => $value) {
                 $key = str_replace("[", "_", $key);
-                $key = str_replace("]", "", $key);   
+                $key = str_replace("]", "", $key);
                 $updateQuery = $updateQuery.$key."='".$value."',";
             }
 
@@ -138,7 +140,7 @@ class logger
                 return http_response_code(500);
 
         }
-    // end make
+        // end make
 
         var_dump("save function ended");
         return http_response_code(200);
@@ -224,17 +226,43 @@ class logger
     // sends email with usersDataLog.csv according to the data in MailerSettings.php
     public static function sendData()
     {
+
         logger::writeData();
         $filePath = logger::logFilesPath;
         $fileName = logger::logFileName;
-
+        //$filePath = '/var/www/html/life-health/logs/';
+        echo 'START<br>'.$filePath.$fileName.'<br>';
+        echo __FILE__.'<br>';
         $mailto = logger::mailTo;
         $subject = logger::subject;
         $message = logger::message;
 
         $content = file_get_contents($filePath.$fileName);
+        echo strlen($content);
+
+
+
+        $email = new PHPMailer();
+        $email->From      = 'logger@skblago.ru';
+        $email->FromName  = 'logger';
+        $email->Subject   = $subject;
+        $email->CharSet = 'UTF-8';
+        $email->Body      =$message ;
+        $email->AddAddress( 'Oleg.Bimaev@skblago.ru' );
+
+        $addresses = explode(';',  $mailto);
+        foreach ($addresses as $address) {
+            $email->AddAddress($address);
+        }
+
+        $email->AddAttachment( $filePath.$fileName);
+        $email->Send();
+
+
+        echo $content."<br>";
         $content = chunk_split(base64_encode($content));
 
+        echo $filePath.$fileName;
         // a random hash will be necessary to send mixed content
         $separator = md5(time());
 
@@ -242,7 +270,7 @@ class logger
         $eol = "\r\n";
 
         // main header (multipart mandatory)
-        $headers = "From: ". logger::mailFrom . $eol;
+        $headers = "From: ". logger::mailFrom . "\r\nReply-To: Oleg.Bimaev@skblago.ru" . $eol;
         $headers .= "MIME-Version: 1.0" . $eol;
         $headers .= "Content-Type: multipart/mixed; boundary=\"" . $separator . "\"" . $eol;
         $headers .= "Content-Transfer-Encoding: 7bit" . $eol;
@@ -252,7 +280,7 @@ class logger
         $body = "--" . $separator . $eol;
         $body .= "Content-Type: text/plain; charset=\"iso-8859-1\"" . $eol;
         $body .= "Content-Transfer-Encoding: 8bit" . $eol;
-        $body .= $message . $eol;
+        $body .= $message. $eol;
 
         // attachment
         $body .= "--" . $separator . $eol;
@@ -262,13 +290,18 @@ class logger
         $body .= $content . $eol;
         $body .= "--" . $separator . "--";
 
+
+        /*$mail_send = @mail('Oleg.Bimaev@skblago.ru','My TEST',$body,'From: Oleg.Bimaev@skblago.ru\r\nReply-To: Oleg.Bimaev@skblago.ru');*/
+
         //SEND Mail
-        var_dump(mail($mailto, $subject, $body, $headers));
+        /*var_dump(mail($mailto, $subject, $body, $headers));
         if (!mail($mailto, $subject, $body, $headers)) {
             echo "mail send ... ERROR!";
             print_r( error_get_last() );
             return http_response_code(500);
-        }
+        }*/
+
+
 
         // Drop table logs
         var_dump("exit");
