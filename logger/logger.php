@@ -243,10 +243,12 @@ class logger
     // sends email with usersDataLog.csv according to the data in MailerSettings.php
     public static function sendData()
     {
-        logger::saveFile();
         logger::writeData();
+        logger::saveFile();
         $filePath = logger::logFilesPath;
         $fileName = logger::logFileName;
+        if ($_GET["sendEmptyFile"] !== "true" && filesize($filePath.$fileName) < 1024)
+            return http_response_code(200);
         echo 'START<br>'.$filePath.$fileName.'<br>';
         echo __FILE__.'<br>';
         $mailto = logger::mailTo;
