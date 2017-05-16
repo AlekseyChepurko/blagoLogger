@@ -33,6 +33,7 @@ class logger
 
     const logFileName = "usersDataLog.csv";
     const logFilesPath = "./logs/";
+    const ArchDir = "arch";
 
     // saves data to DB
     public static function saveData(){
@@ -147,6 +148,23 @@ class logger
 
     }
 
+    public static function saveFile(){
+        $archDir = logger::logFilesPath.logger::ArchDir;
+        if (!is_dir($archDir))
+            mkdir($archDir);
+        $currentDate = date("Y-n-j");
+        $currentArchDir = $archDir.'/'.$currentDate;
+        if(!is_dir($currentArchDir))
+            mkdir($currentArchDir);
+//
+//        const logFileName = "usersDataLog.csv";
+//        const logFilesPath = "./logs/";
+        $file = logger::logFilesPath.logger::logFileName;
+        $resFile = $currentArchDir.'/'.date("H-i").".csv";
+        $res = copy(logger::logFilesPath.logger::logFileName,$resFile);
+        var_dump("file saving ended");
+    }
+
     // writes all records from DB to file ../logs/usersDataLog.csv
     public static function writeData(){
 
@@ -180,7 +198,6 @@ class logger
 
         if (!is_dir(logger::logFilesPath))
             mkdir(logger::logFilesPath);
-//        var_dump(mkdir(logger::logFilesPath));
         var_dump(is_dir(logger::logFilesPath));
 
         $logFile = fopen(logger::logFilesPath.logger::logFileName, "w");
@@ -226,11 +243,10 @@ class logger
     // sends email with usersDataLog.csv according to the data in MailerSettings.php
     public static function sendData()
     {
-
+        logger::saveFile();
         logger::writeData();
         $filePath = logger::logFilesPath;
         $fileName = logger::logFileName;
-        //$filePath = '/var/www/html/life-health/logs/';
         echo 'START<br>'.$filePath.$fileName.'<br>';
         echo __FILE__.'<br>';
         $mailto = logger::mailTo;
@@ -240,14 +256,12 @@ class logger
         $content = file_get_contents($filePath.$fileName);
         echo strlen($content);
 
-
-
         $email = new PHPMailer();
         $email->From      = 'logger@skblago.ru';
         $email->FromName  = 'logger';
         $email->Subject   = $subject;
-        $email->CharSet = 'UTF-8';
-        $email->Body      =$message ;
+        $email->CharSet   = 'UTF-8';
+        $email->Body      = $message ;
         $email->AddAddress( 'Oleg.Bimaev@skblago.ru' );
 
         $addresses = explode(';',  $mailto);
@@ -257,7 +271,6 @@ class logger
 
         $email->AddAttachment( $filePath.$fileName);
         $email->Send();
-
 
         echo $content."<br>";
         $content = chunk_split(base64_encode($content));
@@ -290,22 +303,8 @@ class logger
         $body .= $content . $eol;
         $body .= "--" . $separator . "--";
 
-
-        /*$mail_send = @mail('Oleg.Bimaev@skblago.ru','My TEST',$body,'From: Oleg.Bimaev@skblago.ru\r\nReply-To: Oleg.Bimaev@skblago.ru');*/
-
-        //SEND Mail
-        /*var_dump(mail($mailto, $subject, $body, $headers));
-        if (!mail($mailto, $subject, $body, $headers)) {
-            echo "mail send ... ERROR!";
-            print_r( error_get_last() );
-            return http_response_code(500);
-        }*/
-
-
-
         // Drop table logs
         var_dump("exit");
-        return http_response_code(200);
         $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
         // Check connection
         if ($db->connect_error) {
@@ -327,6 +326,4 @@ class logger
         var_dump("function end");
         return http_response_code(200);
     }
-
-
 }
