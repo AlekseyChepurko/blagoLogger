@@ -30,11 +30,10 @@ class logger
     const mailFrom = MailerSettings::mailFrom;
 
     const logFileName = "usersDataLog.csv";
-    const logFilesPath = "../logs/";
+    const logFilesPath = "./logs/";
 
     // saves data to DB
     public static function saveData(){
-        var_dump("save data function start");
         session_start();
         $sessionId = session_id();
 
@@ -42,7 +41,7 @@ class logger
         $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
         // Check connection
         if ($db->connect_error) {
-//            throw new \Exception("could noy cpnnect to DB");
+
             die("Connection failed: " . $db->connect_error);
         }
 
@@ -108,8 +107,7 @@ class logger
             $keys = rtrim($keys, ',');
         // end make
             $result =$db->query("SHOW TABLES from ".logger::dbname);
-                    // var_dump($db->query("SHOW COLUMNS FROM `".$tableName."`"));
-            // var_dump('name '.$tableName);
+
             $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
             try {
                 var_dump("tables from  ");
@@ -118,10 +116,11 @@ class logger
                 var_dump($e);
             }
             $insertQuery = "INSERT INTO ".$tableName." (session_id,".$keys.") VALUES ('".$sessionId."',".$values.")";
-            var_dump($insertQuery);
-            var_dump($db->query($insertQuery));
+//            $db->query($insertQuery);
             if (!$db->query($insertQuery)){
                 var_dump("here is 500 error");
+                var_dump($insertQuery);
+                var_dump($db->error);
                 return http_response_code(500);
             }
         }
@@ -157,6 +156,8 @@ class logger
 //            throw new \Exception("could noy cpnnect to DB");
             die("Connection failed: " . $db->connect_error);
         }
+
+
         //check the tatble exists
         // if does not -> create
         if ($result = $db->query("SHOW TABLES LIKE 'logs'")) {
@@ -168,16 +169,22 @@ class logger
             return http_response_code(500);
         }
 
-        $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
+        $res = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
+
+        $tables=[];
+        while($row = $res->fetch_assoc()){
+            $tables[] = $row;
+        }
 
         if (!is_dir(logger::logFilesPath))
             mkdir(logger::logFilesPath);
+//        var_dump(mkdir(logger::logFilesPath));
+        var_dump(is_dir(logger::logFilesPath));
 
         $logFile = fopen(logger::logFilesPath.logger::logFileName, "w");
 
         foreach ($tables as $tableName) {
-
-            if (!$usersData = $db->query("SELECT * FROM ".$tableName[0]))
+            if (!$usersData = $db->query("SELECT * FROM ".$tableName["TABLE_NAME"]))
                 return http_response_code(500);
 
             fputcsv($logFile, [""], ';');
@@ -189,12 +196,22 @@ class logger
             {
                 array_push($columnNames, $column->name);
             }
+
             fputcsv($logFile, $columnNames, ";");
-            $usersData->fetch_all();
+
+            $tmp = [];
+            while($row = $usersData->fetch_assoc()){
+                $tmp[] = $row;
+            }
+            $usersData = $tmp;
+            unset($tmp);
+
             foreach ($usersData as $line) {
+
                 foreach ($line as $p => $lineItem) {
                     $line[$p] = iconv("utf-8", "windows-1251", $lineItem);
                 }
+
                 fputcsv($logFile, $line, ";");
             }
         }
@@ -246,6 +263,7 @@ class logger
         $body .= "--" . $separator . "--";
 
         //SEND Mail
+        var_dump(mail($mailto, $subject, $body, $headers));
         if (!mail($mailto, $subject, $body, $headers)) {
             echo "mail send ... ERROR!";
             print_r( error_get_last() );
@@ -253,20 +271,27 @@ class logger
         }
 
         // Drop table logs
-
+        var_dump("exit");
+        return http_response_code(200);
         $db = new Mysqli(logger::servername, logger::username, logger::password, logger::dbname);
         // Check connection
         if ($db->connect_error) {
             die("Connection failed: " . $db->connect_error);
         }
 
-        $tables = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'")->fetch_all();
+        $tmp = $db->query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='".logger::dbname."' AND RIGHT(TABLE_NAME,5)='_logs'");
+        $tables = [];
+        while ($row = $tmp->fetch_array())
+            $tables[] = $row;
+        unset($tmp);
+
+        var_dump($tables);
 
         foreach ($tables as $tableName) {
             $drop_query = "DROP TABLE IF EXISTS $tableName[0]";
             $db->query($drop_query);
         }
-
+        var_dump("function end");
         return http_response_code(200);
     }
 
