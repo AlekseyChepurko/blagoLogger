@@ -5,8 +5,8 @@
 var Logger = (function (){
     var getAllInputs = function()
     {
-        return $("input");
-    }
+        return $("input:visible");
+    };
 
     var transliterate = function transliterate(word){
         var answer = ""
@@ -29,7 +29,7 @@ var Logger = (function (){
         }
       }
         return answer;
-    }
+    };
 
     var saveInputValues = function(){
         var inputs = getAllInputs(),
@@ -40,9 +40,9 @@ var Logger = (function (){
 
             data: {
                 inputs: inputs.serialize(),
-                pageTitle: pageTitle,
+                pageTitle: pageTitle
             },
-            url: "../logger/loggerHandler.php",
+            url: "../../logger/loggerHandler.php",
             success: function(data){
                 console.log("all clear");
                 console.log(data);
@@ -52,10 +52,10 @@ var Logger = (function (){
                 console.log(error);
             }
         });
-    }
+    };
 
     return {
-        saveInputValues: saveInputValues,
+        saveInputValues: saveInputValues
     }
 
 }());
